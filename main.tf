@@ -77,6 +77,6 @@ resource "aws_instance" "public_instance" {
   }
 
   provisioner "local-exec" {
-    command = "ansible-playbook -i '${aws_instance.public_instance.public_ip},' --user ubuntu --private-key=/Users/jaspreet/Documents/Course/devOps/terraform/${var.key_name} docker-install.yml"
+    command = "ansible-playbook -i '${aws_instance.public_instance.public_ip},' --user ubuntu --private-key=/Users/jaspreet/Documents/Course/devOps/deploy-nodeapp-terraform-ansible/${var.key_name} docker-install.yml"
   }
 }
