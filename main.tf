@@ -8,9 +8,9 @@ terraform {
 }
 
 provider "aws" {
-  region     = "ap-south-1"
-  access_key = "access-key"
-  secret_key = "secret-key"
+  region     = "AWS_REGION"
+  access_key = "AWS_ACCESS_KEY"
+  secret_key = "AWS_SECRET_KEY"
 }
 
 // To Generate Private Key
@@ -75,8 +75,40 @@ resource "aws_instance" "public_instance" {
   tags = {
     Name = "public_instance"
   }
+  
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp2"
+  }
 
   provisioner "local-exec" {
-    command = "ansible-playbook -i '${aws_instance.public_instance.public_ip},' --user ubuntu --private-key=/Users/jaspreet/Documents/Course/devOps/deploy-nodeapp-terraform-ansible/${var.key_name} docker-install.yml"
+    command = "touch dynamic_inventory.ini"
+  }
+}
+
+data "template_file" "inventory" {
+  template = <<-EOT
+    [ec2_instances]
+    ${aws_instance.public_instance.public_ip} ansible_user=ubuntu ansible_private_key_file=${path.module}/${var.key_name}
+    EOT
+}
+
+resource "local_file" "dynamic_inventory" {
+  depends_on = [aws_instance.public_instance]
+
+  filename = "dynamic_inventory.ini"
+  content  = data.template_file.inventory.rendered
+
+  provisioner "local-exec" {
+    command = "chmod 400 ${local_file.dynamic_inventory.filename}"
+  }
+}
+
+resource "null_resource" "run_ansible" {
+  depends_on = [local_file.dynamic_inventory]
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -i dynamic_inventory.ini deploy-app.yml"
+    working_dir = path.module
   }
 }
