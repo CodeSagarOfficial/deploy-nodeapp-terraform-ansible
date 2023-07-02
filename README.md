@@ -21,6 +21,8 @@ terraform init
 ### Run terraform script
 ```hcl
 terraform apply
+
+Enter Name of the SSH key pair
 ```
 
 ### Destroy all resouces
